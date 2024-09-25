@@ -1,5 +1,8 @@
 import pandas as pd
 import plotly.express as px
+import plotly.figure_factory as ff
+import numpy as np
+import plotly.graph_objects as go
 
 def plot_graph(df, parameter, sorted_names, parameter_units, graph_type, 
                label_options=None, time_interval='3min', bins=None):
@@ -22,6 +25,17 @@ def plot_graph(df, parameter, sorted_names, parameter_units, graph_type,
 
     # Round timestamps to the nearest interval (e.g., '5T' for 5 minutes)
     df['TimeStamp'] = df['TimeStamp'].dt.round(time_interval)
+
+    if graph_type == 'heatmap':
+        # Calculate the correlation matrix
+        corr_matrix = df[['light', 'temperature', 'humidity', 'barometric_pressure', 'barometric_temp', 'battery']].corr()
+        # Create a heatmap of the correlation matrix
+        z = np.around(corr_matrix.values, decimals=2)
+        x = corr_matrix.columns.tolist()
+        y = corr_matrix.index.tolist()
+        fig = ff.create_annotated_heatmap(z, x=x, y=y, 
+                        annotation_text=z.astype(str), colorscale='RdYlGn', showscale=True)
+        fig.update_layout(title='Correlation Matrix Heatmap')
 
     if label_options is not None:
         # Group by both TimeStamp and the selected label, then calculate mean and std
@@ -64,6 +78,7 @@ def plot_graph(df, parameter, sorted_names, parameter_units, graph_type,
                 labels={'avg_parameter': f'{parameter} ({parameter_units[parameter]})'},
                 title=f'Histogram of Average {parameter.capitalize()}'
             )
+                                                                                                             
     else:
         # Original plotting without averaging if no label options selected
         if graph_type == 'line':
